@@ -18,7 +18,9 @@ int main() {
     FemtogfxCanvas canvas = femtogfx_create(WIDTH, HEIGHT);
     femtogfx_fill(canvas, true);
     femtogfx_draw_string(canvas, false, "ABCDEFG yoman!!!", (FemtogfxVec2) {.x = 32, .y = 5});
+    femtogfx_draw_horizontal_line(canvas, false, (FemtogfxVec2) {.x = 4, .y = 15}, 80);
     femtogfx_invert(canvas);
+    femtogfx_draw_horizontal_line(canvas, true, (FemtogfxVec2) {.x = 4, .y = 31}, 16);
 
     bool running = true;
     while (running) {
