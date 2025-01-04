@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#define FEMTOGFX_WORD_SIZE (sizeof(uintptr_t) * 8)
+#define FEMTOGFX_CANVAS_SIZE(width, height) ((width * height + FEMTOGFX_WORD_SIZE - 1) / FEMTOGFX_WORD_SIZE)
+
 typedef struct {
     uintptr_t width;
     uintptr_t height;

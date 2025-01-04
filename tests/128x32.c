@@ -1,13 +1,12 @@
 #include <stddef.h>
+#include <stdlib.h>
+
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_render.h>
 
 #include "../femtogfx.h"
 
 const size_t WIDTH = 128;
 const size_t HEIGHT = 32;
-// const size_t WIDTH = 64 * 5;
-// const size_t HEIGHT = 64 * 5;
 
 int main() {
     SDL_Init(0);
@@ -15,12 +14,15 @@ int main() {
     SDL_Window *window;
     SDL_CreateWindowAndRenderer("ez_monochrome_graphics_test", WIDTH, HEIGHT, 0, &window, &renderer);
 
-    FemtogfxCanvas canvas = femtogfx_create(WIDTH, HEIGHT);
+    FemtogfxCanvas canvas = {
+        .width = WIDTH,
+        .height = HEIGHT,
+        .pixels = malloc(sizeof(uintptr_t) * FEMTOGFX_CANVAS_SIZE(WIDTH, HEIGHT)),
+    };
+
     femtogfx_fill(canvas, true);
-    femtogfx_draw_string(canvas, false, "ABCDEFG yoman!!!", (FemtogfxVec2) {.x = 32, .y = 5});
-    femtogfx_draw_horizontal_line(canvas, false, (FemtogfxVec2) {.x = 4, .y = 15}, 80);
+    femtogfx_draw_string(canvas, false, "ABCDEFG !!!\n!!!!!??&", (FemtogfxVec2) {.x = 32, .y = 5});
     femtogfx_invert(canvas);
-    femtogfx_draw_horizontal_line(canvas, true, (FemtogfxVec2) {.x = 4, .y = 31}, 16);
 
     bool running = true;
     while (running) {
@@ -51,4 +53,5 @@ int main() {
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    free(canvas.pixels);
 }

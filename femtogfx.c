@@ -1,11 +1,7 @@
 #include "femtogfx.h"
 
-#include <stdlib.h>
-
-#define bitsize (sizeof(uintptr_t) * 8)
-#define canvas_size(canvas) ((canvas.width * canvas.height + bitsize - 1) / bitsize)
-#define get_byte_index(canvas, x, y) ((canvas.width * y + x) / bitsize)
-#define get_bit_index(canvas, x, y) ((canvas.width * y + x) % bitsize)
+#define get_byte_index(canvas, x, y) ((canvas.width * y + x) / FEMTOGFX_WORD_SIZE)
+#define get_bit_index(canvas, x, y) ((canvas.width * y + x) % FEMTOGFX_WORD_SIZE)
 #define get_bit_mask(shift) ((uintptr_t) 1 << shift);
 #define all_bits_set (~((uintptr_t) 0))
 
@@ -17,24 +13,12 @@ static void femtogfx_memset(void *ptr, uint8_t value, uintptr_t length) {
     }
 }
 
-FemtogfxCanvas femtogfx_create(uintptr_t width, size_t height) {
-    return (FemtogfxCanvas) {
-        .width = width,
-        .height = height,
-        .pixels = (uintptr_t *) calloc((width * height + bitsize - 1) / bitsize, sizeof(size_t)),
-    };
-}
-
-void femtogfx_destroy(FemtogfxCanvas canvas) {
-    free(canvas.pixels);
-}
-
 inline void femtogfx_fill(FemtogfxCanvas canvas, bool color) {
-    femtogfx_memset(canvas.pixels, color ? 0xFF : 0x00, canvas_size(canvas) * sizeof(uintptr_t));
+    femtogfx_memset(canvas.pixels, color ? 0xFF : 0x00, FEMTOGFX_CANVAS_SIZE(canvas.width, canvas.height) * sizeof(uintptr_t));
 }
 
 inline void femtogfx_invert(FemtogfxCanvas canvas) {
-    for (uintptr_t i = 0 ; i < canvas_size(canvas) ; i++) {
+    for (uintptr_t i = 0 ; i < FEMTOGFX_CANVAS_SIZE(canvas.width, canvas.height) ; i++) {
         canvas.pixels[i] = ~canvas.pixels[i];
     }
 }
