@@ -2,14 +2,14 @@
 
 #include <stdlib.h>
 
-#define bitsize (sizeof(size_t) * 8)
+#define bitsize (sizeof(uintptr_t) * 8)
 #define canvas_size(canvas) ((canvas.width * canvas.height + bitsize - 1) / bitsize)
 #define get_byte_index(canvas, x, y) ((canvas.width * y + x) / bitsize)
 #define get_bit_index(canvas, x, y) ((canvas.width * y + x) % bitsize)
-#define get_bit_mask(shift) ((size_t) 1 << shift);
-#define all_bits_set (~((size_t) 0))
+#define get_bit_mask(shift) ((uintptr_t) 1 << shift);
+#define all_bits_set (~((uintptr_t) 0))
 
-static void femtogfx_memset(void *ptr, uint8_t value, size_t length) {
+static void femtogfx_memset(void *ptr, uint8_t value, uintptr_t length) {
     uint8_t *p = ptr;
     while (length--) {
         *p = value;
@@ -17,11 +17,11 @@ static void femtogfx_memset(void *ptr, uint8_t value, size_t length) {
     }
 }
 
-FemtogfxCanvas femtogfx_create(size_t width, size_t height) {
+FemtogfxCanvas femtogfx_create(uintptr_t width, size_t height) {
     return (FemtogfxCanvas) {
         .width = width,
         .height = height,
-        .pixels = (size_t *) calloc((width * height + bitsize - 1) / bitsize, sizeof(size_t)),
+        .pixels = (uintptr_t *) calloc((width * height + bitsize - 1) / bitsize, sizeof(size_t)),
     };
 }
 
@@ -30,33 +30,33 @@ void femtogfx_destroy(FemtogfxCanvas canvas) {
 }
 
 inline void femtogfx_fill(FemtogfxCanvas canvas, bool color) {
-    femtogfx_memset(canvas.pixels, color ? 0xFF : 0x00, canvas_size(canvas) * sizeof(size_t));
+    femtogfx_memset(canvas.pixels, color ? 0xFF : 0x00, canvas_size(canvas) * sizeof(uintptr_t));
 }
 
 inline void femtogfx_invert(FemtogfxCanvas canvas) {
-    for (size_t i = 0 ; i < canvas_size(canvas) ; i++) {
+    for (uintptr_t i = 0 ; i < canvas_size(canvas) ; i++) {
         canvas.pixels[i] = ~canvas.pixels[i];
     }
 }
 
-inline void femtogfx_set_pixel(FemtogfxCanvas canvas, bool color, size_t x, size_t y) {
-    const size_t offset = get_bit_index(canvas, x, y);
+inline void femtogfx_set_pixel(FemtogfxCanvas canvas, bool color, uintptr_t x, size_t y) {
+    const uintptr_t offset = get_bit_index(canvas, x, y);
     canvas.pixels[get_byte_index(canvas, x, y)] &= ~get_bit_mask(offset);
-    canvas.pixels[get_byte_index(canvas, x, y)] |= (size_t) color << offset;
+    canvas.pixels[get_byte_index(canvas, x, y)] |= (uintptr_t) color << offset;
 }
 
-inline bool femtogfx_get_pixel(FemtogfxCanvas canvas, size_t x, size_t y) {
+inline bool femtogfx_get_pixel(FemtogfxCanvas canvas, uintptr_t x, size_t y) {
     return canvas.pixels[get_byte_index(canvas, x, y)] & get_bit_mask(get_bit_index(canvas, x, y));
 }
 
 inline void femtogfx_draw_line(FemtogfxCanvas canvas, bool color, FemtogfxVec2 p0, FemtogfxVec2 p1) {
-    ssize_t dx = p1.x - p0.x;
+    intptr_t dx = p1.x - p0.x;
     dx *= dx < 0 ? -1 : 1;
-    ssize_t sx = p0.x < p1.x ? 1 : -1;
-    ssize_t dy = p1.y - p0.y;
+    intptr_t sx = p0.x < p1.x ? 1 : -1;
+    intptr_t dy = p1.y - p0.y;
     dy *= dy < 0 ? 1 : -1;
-    ssize_t sy = p0.y < p1.y ? 1 : -1;
-    ssize_t error = dx + dy;
+    intptr_t sy = p0.y < p1.y ? 1 : -1;
+    intptr_t error = dx + dy;
 
     while (true) {
         femtogfx_set_pixel(canvas, color, p0.x, p0.y);
@@ -74,12 +74,12 @@ inline void femtogfx_draw_line(FemtogfxCanvas canvas, bool color, FemtogfxVec2 p
     }
 }
 
-inline void femtogfx_draw_horizontal_line(FemtogfxCanvas canvas, bool color, FemtogfxVec2 point, size_t width) {
-    size_t start_byte_index = get_byte_index(canvas, point.x, point.y);
-    size_t start_byte_mask = all_bits_set << get_bit_index(canvas, point.x, point.y);
+inline void femtogfx_draw_horizontal_line(FemtogfxCanvas canvas, bool color, FemtogfxVec2 point, uintptr_t width) {
+    uintptr_t start_byte_index = get_byte_index(canvas, point.x, point.y);
+    uintptr_t start_byte_mask = all_bits_set << get_bit_index(canvas, point.x, point.y);
 
-    size_t end_byte_index = get_byte_index(canvas, point.x + width, point.y);
-    size_t end_byte_mask = all_bits_set >> get_bit_index(canvas, point.x + width, point.y);
+    uintptr_t end_byte_index = get_byte_index(canvas, point.x + width, point.y);
+    uintptr_t end_byte_mask = all_bits_set >> get_bit_index(canvas, point.x + width, point.y);
 
     if (start_byte_index == end_byte_index) {
         if (color) {
@@ -93,20 +93,20 @@ inline void femtogfx_draw_horizontal_line(FemtogfxCanvas canvas, bool color, Fem
     if (color) {
         canvas.pixels[start_byte_index] |= start_byte_mask;
         canvas.pixels[end_byte_index] |= end_byte_mask;
-        for (size_t i = start_byte_index + 1 ; i < end_byte_index ; i++) {
+        for (uintptr_t i = start_byte_index + 1 ; i < end_byte_index ; i++) {
             canvas.pixels[i] = all_bits_set;
         }
     } else {
         canvas.pixels[start_byte_index] &= ~start_byte_mask;
         canvas.pixels[end_byte_index] &= ~end_byte_mask;
-        for (size_t i = start_byte_index + 1 ; i < end_byte_index ; i++) {
+        for (uintptr_t i = start_byte_index + 1 ; i < end_byte_index ; i++) {
             canvas.pixels[i] = 0;
         }
     }
 }
 
 inline void femtogfx_draw_rectangle_edges(FemtogfxCanvas canvas, bool color, FemtogfxRectangle rectangle) {
-    for (size_t y = rectangle.y ; y < rectangle.y + rectangle.h ; y++) {
+    for (uintptr_t y = rectangle.y ; y < rectangle.y + rectangle.h ; y++) {
         femtogfx_set_pixel(canvas, color, rectangle.x, y);
         femtogfx_set_pixel(canvas, color, rectangle.x + rectangle.w, y);
     }
@@ -115,7 +115,7 @@ inline void femtogfx_draw_rectangle_edges(FemtogfxCanvas canvas, bool color, Fem
 }
 
 inline void femtogfx_draw_rectangle(FemtogfxCanvas canvas, bool color, FemtogfxRectangle rectangle) {
-    for (size_t y = rectangle.y ; y < rectangle.y + rectangle.h ; y++) {
+    for (uintptr_t y = rectangle.y ; y < rectangle.y + rectangle.h ; y++) {
         femtogfx_draw_horizontal_line(canvas, color, (FemtogfxVec2) {.x = rectangle.x, .y = y}, rectangle.w);
     }
 }
